@@ -11,5 +11,5 @@ bgp-sel.exe "searchterm"
 
 Note: If you want to make use of negative search terms such as -"not this" you can either just run bgp-sel.exe or esecape the quotation marks (e.g. bgp-sel.exe "this -\"not this\"")
 
-#Future Plans
+# Future Plans
 Add command line arguments, and reporting options.

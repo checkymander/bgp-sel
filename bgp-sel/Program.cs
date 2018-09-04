@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Web;
 using System.IO;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using OpenQA.Selenium;
+using Mono.Options;
 using OpenQA.Selenium.Chrome;
 
 namespace bgp_sel
@@ -12,9 +12,15 @@ namespace bgp_sel
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Welcome to bgp-sel, a bgp.he.net scraper written in .NET! Searches for IPv4 addresses in order to assist Bounty Hunters");
+            string format = "";
+            bool help = false;
+            string search="";
             string searchurl;
-            string search;
+            OptionSet options = new OptionSet()
+                .Add("?:|help:|h:", "Prints out the options", option => help = true)
+                .Add("f:|format:", "Output Format: txt, csv, terminal", f => format = f)
+                .Add("s|search=", "String to search", s => search = s);
+            options.Parse(args);
             //ToDo: Include report options, CSV,txt,IP's only, Descriptions etc etc.
             //Command Line Options to support
             //Currently only supports IPv4 - Need to add IPv6 regex.
@@ -25,7 +31,13 @@ namespace bgp_sel
             IWebDriver driver = new ChromeDriver(Directory.GetCurrentDirectory(), co);
             List<string> toParse = new List<string>();
             List<string> IPs = new List<string>();
-            if (args.Length==0)
+
+            if (help)
+            {
+                displayHelp("Usage: bgp-sel.exe --search \"searchterm\"", options);
+                Environment.Exit(0);
+            }
+            if (string.IsNullOrEmpty(search))
             {
 
                 Console.Write("Enter Search Term (Don't forget double quotes!): ");
@@ -35,11 +47,13 @@ namespace bgp_sel
             }
             else
             {
-                searchurl = "https://bgp.he.net/search?search%5Bsearch%5D=" + Uri.EscapeDataString(args[1]) + "&commit=Search";
+                searchurl = "https://bgp.he.net/search?search%5Bsearch%5D=" + Uri.EscapeDataString(search) + "&commit=Search";
             }
-
+            if (string.IsNullOrEmpty(format))
+            {
+                format = "terminal";
+            }
             Console.WriteLine("Searching {0}", searchurl);
-            Console.ReadKey();
 
             driver.Navigate().GoToUrl(searchurl);
             driver.Manage().Window.Maximize();
@@ -53,14 +67,10 @@ namespace bgp_sel
                 if (link.Text.Contains("AS"))
                 {
                     toParse.Add(link.Text);
-                    //Console.WriteLine("Adding toParse {0}", link.Text);
-                   
                 }
                 else if (match.Success)
                 {
                     IPs.Add(link.Text);
-                    //Console.WriteLine(link.Text);
-                    //Console.WriteLine("IPv4 found: {0}", link.Text);
                 }
             }
 
@@ -76,9 +86,7 @@ namespace bgp_sel
                         Match match = r.Match(url.Text);
                         if (match.Success)
                         {
-                            //Console.WriteLine(url.Text);
                             IPs.Add(url.Text);
-                            // Console.WriteLine("IPv4 found: {0}", url.Text);
                         }
 
                     }
@@ -96,6 +104,12 @@ namespace bgp_sel
                     Console.WriteLine(IP);
                 }
             }
+        }
+        public static void displayHelp(string message, OptionSet o)
+        {
+            Console.Error.WriteLine(message);
+            o.WriteOptionDescriptions(Console.Error);
+            Environment.Exit(-1);
         }
     }
 }
